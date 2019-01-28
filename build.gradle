@@ -1,0 +1,67 @@
+buildscript {
+    dependencies {
+        classpath 'com.squareup.okhttp3:okhttp:3.8.1'
+        classpath 'org.zeroturnaround:zt-exec:1.10'
+    }
+    repositories {
+        jcenter()
+    }
+}
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.beryx.jlink' version '2.4.4'
+    id 'org.javamodularity.moduleplugin' version '1.4.0'
+    id 'com.github.breadmoirai.github-release' version '2.2.3'
+}
+
+group = 'com.github.slamdev'
+version = '0.0.1'
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+mainClassName = "${group}.embedded.pg/${group}.embedded.pg.App"
+
+ext {
+    app = 'embedded-pg'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'com.opentable.components:otj-pg-embedded:0.13.0'
+    compile 'com.github.pcj:google-options:1.0.0'
+    compile 'org.slf4j:slf4j-simple:1.7.25'
+
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': "${app}",
+                'Main-Class': "${group}.embedded.pg.App"
+    }
+}
+
+githubRelease {
+    token ghToken // in .gradle/gradle.properties
+    releaseAssets project.file("${project.buildDir}/image.zip")
+    overwrite true
+    body ''
+}
+
+jlink {
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    launcher {
+        name = app
+    }
+}
+
+prepareMergedJarsDir.doLast {
+    def mjDir = mergedJarsDir.get().asFile
+    file("$mjDir/postgresql-Darwin-x86_64.txz").delete()
+    file("$mjDir/postgresql-Windows-x86_64.txz").delete()
+}
+
+tasks.githubRelease.dependsOn jlinkZip
