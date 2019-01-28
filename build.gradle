@@ -2,6 +2,7 @@ buildscript {
     dependencies {
         classpath 'com.squareup.okhttp3:okhttp:3.8.1'
         classpath 'org.zeroturnaround:zt-exec:1.10'
+        classpath 'com.j256.simplemagic:simplemagic:1.10'
     }
     repositories {
         jcenter()
@@ -34,7 +35,6 @@ dependencies {
     compile 'com.opentable.components:otj-pg-embedded:0.13.0'
     compile 'com.github.pcj:google-options:1.0.0'
     compile 'org.slf4j:slf4j-simple:1.7.25'
-
 }
 
 jar {
@@ -46,7 +46,7 @@ jar {
 
 githubRelease {
     token ghToken // in .gradle/gradle.properties
-    releaseAssets project.file("${project.buildDir}/image.zip")
+    releaseAssets project.file("${project.buildDir}/embedded-pg.zip")
     overwrite true
     body ''
 }
@@ -65,3 +65,7 @@ prepareMergedJarsDir.doLast {
 }
 
 tasks.githubRelease.dependsOn jlinkZip
+
+tasks.githubRelease.doFirst {
+    project.file("${project.buildDir}/image.zip").renameTo(project.file("${project.buildDir}/embedded-pg.zip"))
+}
