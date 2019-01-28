@@ -11,21 +11,14 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'application'
-    id 'org.beryx.jlink' version '2.4.4'
-    id 'org.javamodularity.moduleplugin' version '1.4.0'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
     id 'com.github.breadmoirai.github-release' version '2.2.3'
 }
 
 group = 'com.github.slamdev'
 version = '0.0.1'
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
-mainClassName = "${group}.embedded.pg/${group}.embedded.pg.App"
-
-ext {
-    app = 'embedded-pg'
-}
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     jcenter()
@@ -34,38 +27,28 @@ repositories {
 dependencies {
     compile 'com.opentable.components:otj-pg-embedded:0.13.0'
     compile 'com.github.pcj:google-options:1.0.0'
-    compile 'org.slf4j:slf4j-simple:1.7.25'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
 }
 
 jar {
     manifest {
-        attributes 'Implementation-Title': "${app}",
-                'Main-Class': "${group}.embedded.pg.App"
+        attributes 'Implementation-Title': 'embedded-pg',
+                'Main-Class': "${project.group}.embedded.pg.App"
     }
 }
 
+shadowJar {
+    baseName = 'embedded-pg'
+    classifier = null
+    version = null
+    minimize()
+}
+
 githubRelease {
-    token ghToken // in .gradle/gradle.properties
-    releaseAssets project.file("${project.buildDir}/embedded-pg.zip")
+    token "${-> ghToken}" // in .gradle/gradle.properties
+    releaseAssets project.file("${project.buildDir}/libs/embedded-pg.jar")
     overwrite true
     body ''
 }
 
-jlink {
-    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-    launcher {
-        name = app
-    }
-}
-
-prepareMergedJarsDir.doLast {
-    def mjDir = mergedJarsDir.get().asFile
-    file("$mjDir/postgresql-Darwin-x86_64.txz").delete()
-    file("$mjDir/postgresql-Windows-x86_64.txz").delete()
-}
-
-tasks.githubRelease.dependsOn jlinkZip
-
-tasks.githubRelease.doFirst {
-    project.file("${project.buildDir}/image.zip").renameTo(project.file("${project.buildDir}/embedded-pg.zip"))
-}
+tasks.githubRelease.dependsOn shadowJar
